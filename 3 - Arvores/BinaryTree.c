@@ -4,8 +4,8 @@
 struct NoArvore
 {
     int dado;
-    struct NoArvore *esquerda;
-    struct NoArvore *direita;
+    struct NoArvore *esq;
+    struct NoArvore *dir;
 };
 
 struct NoArvore *criarNo(int dado)
