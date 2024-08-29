@@ -1,178 +1,159 @@
+// DIOGO OLIVEIRA SANTOS - 202311226
+
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
-struct NoArvore
-{
-    int dado;
-    struct NoArvore *esq;
-    struct NoArvore *dir;
+struct typeno { // Definição da Struct do nó
+    int chave;
+    struct typeno *esq; // Ponteiro que aponta para o nó à esquerda
+    struct typeno *dir; // Ponteiro que aponta para o nó à direita 
+    struct typeno *pai; // É utilizado no momento de exclusão, para facilitar o percurso pelos nós
 };
 
-struct NoArvore *criarNo(int dado)
-{
-    struct NoArvore *novoNo = (struct NoArvore *)malloc(sizeof(struct NoArvore));
-    if (novoNo == NULL)
-    {
+
+struct typeno *build(int valor) { // Função para criar um novo nó
+    struct typeno *novo = (struct typeno *)malloc(sizeof(struct typeno));
+    if (novo == NULL) {
         printf("Erro: Falha ao alocar memória para o novo nó.\n");
         exit(-1);
     }
-    novoNo->dado = dado;
-    novoNo->esquerda = NULL;
-    novoNo->direita = NULL;
-    return novoNo;
+    novo->chave = valor;
+    novo->esq = NULL;
+    novo->dir = NULL;
+    return novo;
 }
 
-struct NoArvore *inserir(struct NoArvore *raiz, int dado)
-{
-    if (raiz == NULL)
-    {
-        raiz = criarNo(dado);
-    }
-    else
-    {
-        if (dado <= raiz->dado)
-        {
-            raiz->esquerda = inserir(raiz->esquerda, dado);
-        }
-        else
-        {
-            raiz->direita = inserir(raiz->direita, dado);
+
+void add(struct typeno **arvore, int valor) { // Função para adicionar um valor à árvore
+    if (*arvore == NULL) {
+        *arvore = build(valor);
+    } else {
+        if (valor < (*arvore)->chave) {
+            add(&((*arvore)->esq), valor); // Se o valor a ser inserido for menor que o atual, é inserido à esquerda
+        } else {
+            add(&((*arvore)->dir), valor); // Se o valor a ser inserido for maior que o atual, é inserido à direita
         }
     }
-    return raiz;
 }
 
-struct NoArvore *encontrarMinimo(struct NoArvore *raiz)
-{
-    struct NoArvore *atual = raiz;
-    while (atual->esquerda != NULL)
-    {
-        atual = atual->esquerda;
+struct typeno *find(struct typeno *arvore, int valor){ // Função para encontrar um nó com base em sua chave
+
+    if(arvore == NULL){
+        printf("Empty\n");
+        return NULL;
     }
-    return atual;
+
+    if(valor > arvore->chave){
+        return find(arvore->dir, valor);
+    }
+
+    else if(valor < arvore->chave){
+        return find(arvore->esq, valor);
+    }
+
+    else{
+        return arvore;
+    }
+
 }
 
-struct NoArvore *excluir(struct NoArvore *raiz, int valor)
-{
-    if (raiz == NULL)
-    {
-        return raiz;
-    }
 
-    if (valor < raiz->dado)
-    {
-        raiz->esquerda = excluir(raiz->esquerda, valor);
-    }
-    else if (valor > raiz->dado)
-    {
-        raiz->direita = excluir(raiz->direita, valor);
-    }
-    else
-    {
-        // Caso 1: Nó folha ou nó com apenas um filho
-        if (raiz->esquerda == NULL)
-        {
-            struct NoArvore *temp = raiz->direita;
-            free(raiz);
-            return temp;
+void remover(struct typeno **raiz, int chave) {// Função para remover um nó
+    struct typeno *no = find(*raiz, chave);
+    if (no == NULL) return;
+
+    if (no->esq == NULL && no->dir == NULL) { // Caso 1: Nó é uma folha (não tem filhos)
+        if (no->pai != NULL) {
+            if (no->pai->esq == no) {
+                no->pai->esq = NULL;
+            } else {
+                no->pai->dir = NULL;
+            }
+        } else {
+            *raiz = NULL; // Se for o único nó na árvore
         }
-        else if (raiz->direita == NULL)
-        {
-            struct NoArvore *temp = raiz->esquerda;
-            free(raiz);
-            return temp;
+        free(no);
+    }
+   
+    else if (no->esq == NULL && no->dir != NULL) {  // Caso 2: Nó tem apenas um filho à direita
+        if (no->pai != NULL) {
+            if (no->pai->esq == no) {
+                no->pai->esq = no->dir;
+            } else {
+                no->pai->dir = no->dir;
+            }
+        } else {
+            *raiz = no->dir; // Se o nó for a raiz
         }
-
-        // Caso 2: Nó com dois filhos, encontra o sucessor in-order (menor valor na subárvore direita)
-        struct NoArvore *temp = encontrarMinimo(raiz->direita);
-        raiz->dado = temp->dado;
-        raiz->direita = excluir(raiz->direita, temp->dado);
+        no->dir->pai = no->pai;
+        free(no);
     }
-    return raiz;
-}
-
-void percorrerEmOrdem(struct NoArvore *raiz)
-{
-    if (raiz != NULL)
-    {
-        percorrerEmOrdem(raiz->esquerda);
-        printf("%d ", raiz->dado);
-        percorrerEmOrdem(raiz->direita);
+    
+    else if (no->esq != NULL && no->dir == NULL) { // Caso 3: Nó tem apenas um filho à esquerda
+        if (no->pai != NULL) {
+            if (no->pai->esq == no) {
+                no->pai->esq = no->esq;
+            } else {
+                no->pai->dir = no->esq;
+            }
+        } else {
+            *raiz = no->esq; // Se o nó for a raiz
+        }
+        no->esq->pai = no->pai;
+        free(no);
     }
-}
-
-void percorrerPreOrdem(struct NoArvore *raiz)
-{
-    if (raiz != NULL)
-    {
-        printf("%d ", raiz->dado);
-        percorrerEmOrdem(raiz->esquerda);
-        percorrerEmOrdem(raiz->direita);
-    }
-}
-
-void percorrerPosOrdem(struct NoArvore *raiz)
-{
-    if (raiz != NULL)
-    {
-        percorrerEmOrdem(raiz->esquerda);
-        percorrerEmOrdem(raiz->direita);
-        printf("%d ", raiz->dado);
+    
+    else { // Caso 4: Nó tem dois filhos
+        struct typeno *sucessor = no->dir; // Encontrar o sucessor (o menor nó na subárvore direita)
+        while (sucessor->esq != NULL) {
+            sucessor = sucessor->esq;
+        }
+        no->chave = sucessor->chave;
+        remover(&no->dir, sucessor->chave); // Remover o sucessor
     }
 }
 
-// Função auxiliar para imprimir um caractere precedido por uma quantidade específica de espaços
-void imprimeNo(int c, int b)
-{
-    int i;
-    for (i = 0; i < b; i++)
+
+
+void imprimeNo(int a, int b){ // (REFERÊNCIA DA WEB) Função para imprimir um nó precedido por espaços vazios
+
+    for (int i = 0; i < b; i++)
         printf("   ");
-    printf("%i\n", c);
+    printf("%i\n", a);
 }
 
-// Função para exibir a árvore no formato esquerda-raiz-direita segundo Sedgewick
-void mostraArvore(struct NoArvore *a, int b)
-{
-    if (a == NULL)
-    {
+
+void imprimeArvore(struct typeno *arvore, int b){ // (REFERÊNCIA DA WEB) Função para exibir a árvore no formato esquerda-raiz-direita segundo Sedgewick 
+    if (arvore == NULL){
         return;
     }
-    mostraArvore(a->direita, b + 1);
-    imprimeNo(a->dado, b); // Convertendo para caractere para imprimir
-    mostraArvore(a->esquerda, b + 1);
+    imprimeArvore(arvore->dir, b + 1);
+    imprimeNo(arvore->chave, b); 
+    imprimeArvore(arvore->esq, b + 1);
 }
 
-int main()
-{
-    struct NoArvore *raiz = NULL;
+int main() {
+    struct typeno *arvore = NULL;
 
-    // Inserindo elementos na árvore
-    raiz = inserir(raiz, 1);
-    raiz = inserir(raiz, 2);
-    raiz = inserir(raiz, 3);
-    raiz = inserir(raiz, 4);
-    raiz = inserir(raiz, 5);
-    raiz = inserir(raiz, 6);
-    raiz = inserir(raiz, 7);
-    raiz = inserir(raiz, 8);
-    raiz = inserir(raiz, 9);
-    raiz = inserir(raiz, 10);
+    // Adicionando valores à árvore
+    add(&arvore, 12);
+    add(&arvore, 10);
+    add(&arvore, 15);
+    add(&arvore, 6);
+    add(&arvore, 14);
+    add(&arvore, 11);
+    add(&arvore, 20);
+    add(&arvore, 16);
+    add(&arvore, 1);
+    add(&arvore, 8);
 
-    mostraArvore(raiz, 3);
-    excluir(raiz,5);
-    mostraArvore(raiz,3);
-    /* Imprimindo a árvore em ordem
-    printf("\nÁrvore em pré-ordem: ");
-    percorrerPreOrdem(raiz);
-    printf("\n");
 
-    printf("Árvore em ordem: ");
-    percorrerEmOrdem(raiz);
-    printf("\n");
+    imprimeArvore(arvore, 0); // Imprimir a árvore
 
-    printf("Árvore em pós-ordem: ");
-    percorrerPosOrdem(raiz);
-    printf("\n");*/
-
+    remover(&arvore, 6); // Removendo nó da árvore
+    remover(&arvore, 1); 
     return 0;
 }
+
+
