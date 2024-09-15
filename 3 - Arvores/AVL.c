@@ -1,425 +1,305 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-// Definição da estrutura do nó da árvore AVL
-// São utilizados três parâmetros: dado, esquerda e direita, além da altura para balanceamento
-struct NoAVL
-{
-    int dado;
-    struct NoAVL *esquerda;
-    struct NoAVL *direita;
-    int altura;
+// DIOGO OLIVEIRA SANTOS - 202311226
+
+//---------- ÁRVORE BINÁRIA ---------- 
+
+struct typeno { // Definição da Struct do nó
+    int chave;
+    struct typeno *esq; // Ponteiro que aponta para o nó à esquerda
+    struct typeno *dir; // Ponteiro que aponta para o nó à direita 
+    struct typeno *pai; // É utilizado no momento de exclusão, para facilitar o percurso pelos nós
 };
 
-// Função para criar um novo nó na árvore
-// Recebe um valor inteiro como parâmetro e retorna um ponteiro para o novo nó
-struct NoAVL *criarNo(int dado)
-{
-    // Aloca memória para um novo nó da árvore AVL
-    struct NoAVL *novoNo = (struct NoAVL *)malloc(sizeof(struct NoAVL));
-    // Verifica se a alocação de memória foi bem-sucedida
-    if (novoNo == NULL)
-    {
-        // Imprime uma mensagem de erro e encerra o programa caso a alocação falhe
+
+struct typeno *build(int valor) { // Função para criar um novo nó
+    struct typeno *novo = (struct typeno *)malloc(sizeof(struct typeno));
+    if (novo == NULL) {
         printf("Erro: Falha ao alocar memória para o novo nó.\n");
         exit(-1);
     }
-    novoNo->dado = dado;     // Armazena o valor fornecido dentro do nó
-    novoNo->esquerda = NULL; // Inicializa o ponteiro para o filho esquerdo como nulo
-    novoNo->direita = NULL;  // Inicializa o ponteiro para o filho direito como nulo
-    novoNo->altura = 0;      // Inicializa a altura do nó como 0
-    return novoNo;           // Retorna o ponteiro para o novo nó criado
-}
-
-// Função para calcular a altura de um nó
-// Recebe um ponteiro para o nó como parâmetro e retorna um inteiro representando a altura do nó
-int altura(struct NoAVL *no)
-{
-    // Verifica se o nó é nulo
-    if (no == NULL)
-        return -1;      // Se for nulo, retorna 0
-    return no->altura; // Retorna a altura armazenada no nó
-}
-
-// Função para calcular o fator de balanceamento de um nó
-// Recebe um ponteiro para o nó como parâmetro e retorna um inteiro representando o fator de balanceamento
-int fatorBalanceamento(struct NoAVL *no)
-{
-    // Verifica se o nó é nulo
-    if (no == NULL)
-        return 0; // Se for nulo, retorna 0
-    // Calcula o fator de balanceamento subtraindo a altura da subárvore direita pela altura da subárvore esquerda
-    return altura(no->esquerda) - altura(no->direita);
-}
-// Caso esteja desbalanceado e precise rotacionar à direita em torno do nó
-struct NoAVL *rotacaoDireita(struct NoAVL *no)
-{
-    struct NoAVL *novaRaiz = no->esquerda;       // Define a nova raiz como o nó à esquerda
-    struct NoAVL *subArvore = novaRaiz->direita; // Define a subárvore como a subárvore direita da nova raiz
-
-    // Realiza a rotação
-    novaRaiz->direita = no;   // Define o nó como filho direito da nova raiz
-    no->esquerda = subArvore; // Define a subárvore direita da nova raiz como filho esquerdo do nó
-
-    // Atualiza as alturas
-    if (altura(no->esquerda) > altura(no->direita)) // Verifica a altura da subárvore esquerda
-        no->altura = 1 + altura(no->esquerda);      // Atualiza a altura do nó
-    else
-        no->altura = 1 + altura(no->direita); // Atualiza a altura do nó
-
-    if (altura(novaRaiz->esquerda) > altura(novaRaiz->direita)) // Verifica a altura da subárvore esquerda da nova raiz
-        novaRaiz->altura = 1 + altura(novaRaiz->esquerda);      // Atualiza a altura da nova raiz
-    else
-        novaRaiz->altura = 1 + altura(novaRaiz->direita); // Atualiza a altura da nova raiz
-
-    return novaRaiz; // Retorna a nova raiz após a rotação
-}
-
-// Caso esteja desbalanceado e precise rotacionar à direita em torno de nó
-struct NoAVL *rotacaoEsquerda(struct NoAVL *no)
-{
-    struct NoAVL *novaRaiz = no->direita;         // Define a nova raiz como o nó à direita
-    struct NoAVL *subArvore = novaRaiz->esquerda; // Define a subárvore como a subárvore esquerda da nova raiz
-
-    // Realiza a rotação
-    novaRaiz->esquerda = no; // Define o nó como filho esquerdo da nova raiz
-    no->direita = subArvore; // Define a subárvore esquerda da nova raiz como filho direito do nó
-
-    // Atualiza as alturas
-    if (altura(no->esquerda) > altura(no->direita)) // Verifica a altura da subárvore esquerda
-        no->altura = 1 + altura(no->esquerda);      // Atualiza a altura do nó
-    else
-        no->altura = 1 + altura(no->direita); // Atualiza a altura do nó
-
-    if (altura(novaRaiz->esquerda) > altura(novaRaiz->direita)) // Verifica a altura da subárvore esquerda da nova raiz
-        novaRaiz->altura = 1 + altura(novaRaiz->esquerda);      // Atualiza a altura da nova raiz
-    else
-        novaRaiz->altura = 1 + altura(novaRaiz->direita); // Atualiza a altura da nova raiz
-
-    return novaRaiz; // Retorna a nova raiz após a rotação
-}
-
-// Função que vai realizar o balanceamento da árvore
-// Utiliza as funções anteriores para analisar cada caso
-struct NoAVL *balanceamento(struct NoAVL *raiz, int dado)
-{
-    // Atualiza a altura do nó atual
-    if (raiz == NULL) // Se a raiz for nula, retorna a raiz
-    {
-        return raiz;
-    }
-    if (altura(raiz->esquerda) > altura(raiz->direita)) // Verifica a altura da subárvore esquerda
-    {
-        raiz->altura = 1 + altura(raiz->esquerda); // Atualiza a altura da raiz
-    }
-    else
-    {
-        raiz->altura = 1 + altura(raiz->direita); // Atualiza a altura da raiz
-    }
-
-    // Calcula o fator de balanceamento deste nó para verificar se ele se tornou desbalanceado
-    int balanceamento = fatorBalanceamento(raiz); // Calcula o fator de balanceamento da raiz
-
-    // Caso de desbalanceamento à esquerda-esquerda
-    if (balanceamento > 1 && dado < raiz->esquerda->dado) // Se o fator de balanceamento for maior que 1 e o dado for menor que o dado da subárvore esquerda
-        return rotacaoDireita(raiz);                      // Realiza rotação à direita
-
-    // Caso de desbalanceamento à direita-direita
-    if (balanceamento < -1 && dado > raiz->direita->dado) // Se o fator de balanceamento for menor que -1 e o dado for maior que o dado da subárvore direita
-        return rotacaoEsquerda(raiz);                     // Realiza rotação à esquerda
-
-    // Caso de desbalanceamento à esquerda-direita
-    if (balanceamento > 1 && dado > raiz->esquerda->dado) // Se o fator de balanceamento for maior que 1 e o dado for maior que o dado da subárvore esquerda
-    {
-        raiz->esquerda = rotacaoEsquerda(raiz->esquerda); // Realiza rotação à esquerda na subárvore esquerda da raiz
-        return rotacaoDireita(raiz);                      // Realiza rotação à direita na raiz
-    }
-
-    // Caso de desbalanceamento à direita-esquerda
-    if (balanceamento < -1 && dado < raiz->direita->dado) // Se o fator de balanceamento for menor que -1 e o dado for menor que o dado da subárvore direita
-    {
-        raiz->direita = rotacaoDireita(raiz->direita); // Realiza rotação à direita na subárvore direita da raiz
-        return rotacaoEsquerda(raiz);                  // Realiza rotação à esquerda na raiz
-    }
-
-    // Retorna a raiz inalterada
-    return raiz; // Retorna a raiz após o balanceamento
-}
-
-// Função para inserir um novo nó na árvore AVL
-struct NoAVL *inserir(struct NoAVL *raiz, int dado)
-{
-    // Verifica se a raiz é nula, indicando que estamos em uma folha da árvore ou que a árvore está vazia
-    if (raiz == NULL)
-    {
-        // Se a raiz for nula, cria um novo nó com o dado fornecido e o retorna como a nova raiz da árvore
-        return criarNo(dado);
-    }
-
-    // Se o dado a ser inserido for menor que o valor da raiz atual, insere recursivamente na subárvore esquerda
-    if (dado < raiz->dado)
-    {
-        raiz->esquerda = inserir(raiz->esquerda, dado);
-    }
-    // Se o dado for maior que o valor da raiz atual, insere recursivamente na subárvore direita
-    else if (dado > raiz->dado)
-    {
-        raiz->direita = inserir(raiz->direita, dado);
-    }
-    else
-    {
-        // Se o dado for igual ao valor da raiz atual, não faz nada (dados iguais não são permitidos na árvore AVL)
-        return raiz;
-    }
-
-    // Após a inserção, chama a função de balanceamento para garantir que a árvore permaneça balanceada
-    return balanceamento(raiz, dado);
-}
-
-// Encontra o menor valor na árvore AVL
-struct NoAVL *encontrarMinimo(struct NoAVL *no)
-{
-    struct NoAVL *atual = no;
-
-    // Percorre a subárvore esquerda até encontrar o nó mais à esquerda
-    while (atual && atual->esquerda != NULL)
-        atual = atual->esquerda;
-
-    return atual;
-}
-
-struct NoAVL* encontrarMaximo(struct NoAVL* no) {
-    // Verifica se o nó fornecido é válido
-    if (no == NULL)
-        return NULL;
-
-    // Percorre a subárvore à esquerda até encontrar o nó mais à direita
-    while (no->direita != NULL) {
-        no = no->direita;
-    }
-
-    // Retorna o nó mais à direita da subárvore esquerda
-    return no;
+    novo->chave = valor;
+    novo->esq = NULL;
+    novo->dir = NULL;
+    return novo;
 }
 
 
-// Função para excluir um nó na árvore AVL
-struct NoAVL *excluir(struct NoAVL *raiz, int valor) {
-    if (raiz == NULL) // Verifica se o nó a ser excluído existe ou é nulo
-    {
-        return raiz;
-    }
-
-    if (valor < raiz->dado) // Verifica se o dado está à esquerda
-    {
-        raiz->esquerda = excluir(raiz->esquerda, valor); // Chama a função recursivamente até encontrar o nó a ser excluído
-    }
-    else if (valor > raiz->dado) // Verifica se o dado está à direita
-    {
-        raiz->direita = excluir(raiz->direita, valor); // Chama a função recursivamente até encontrar o nó a ser excluído
-    }
-    else // Se o nó atual for igual ao valor a ser excluído
-    {
-        // Caso 1: Nó folha ou nó com apenas um filho
-        if (raiz->esquerda == NULL) // Se tiver apenas filhos à direita
-        {
-            struct NoAVL *temp = raiz->direita; // Define qual nó filho irá substituir o pai, nesse caso, o nó à direita.
-            free(raiz);                         // Libera o valor do nó da memória
-            return temp;                        // Retorna o nó que irá substituir o nó pai
-        }
-        else if (raiz->direita == NULL) // Se tiver apenas filhos à esquerda
-        {
-            struct NoAVL *temp = raiz->esquerda; // Define qual nó filho irá substituir o pai, nesse caso, o nó à esquerda.
-            free(raiz);                         // Libera o valor do nó da memória
-            return temp;                        // Retorna o nó que irá substituir o nó pai
-        }
-
-        // Caso 2: Nó com dois filhos
-        // Verifica o balanceamento antes de decidir entre o valor maior à direita da subárvore esquerda ou o menor valor à esquerda da subárvore direita
-        if (altura(raiz->esquerda) >= altura(raiz->direita)) {
-            // Se a altura da subárvore esquerda for maior, escolhe o maior valor à direita da subárvore esquerda
-            struct NoAVL *temp = encontrarMaximo(raiz->esquerda); // Encontra o maior valor na subárvore esquerda
-            raiz->dado = temp->dado;                              // Copia o valor do sucessor in-order (maior valor na subárvore esquerda) para a raiz atual
-            raiz->esquerda = excluir(raiz->esquerda, temp->dado); // Remove o nó com o valor copiado da subárvore esquerda
+void add(struct typeno **arvore, int valor) { // Função para adicionar um valor à árvore
+    if (*arvore == NULL) {
+        *arvore = build(valor);
+    } else {
+        if (valor < (*arvore)->chave) {
+            add(&((*arvore)->esq), valor); // Se o valor a ser inserido for menor que o atual, é inserido à esquerda
         } else {
-            // Caso contrário, escolhe o menor valor à esquerda da subárvore direita
-            struct NoAVL *temp = encontrarMinimo(raiz->direita); // Encontra o menor valor na subárvore direita
-            raiz->dado = temp->dado;                              // Copia o valor do sucessor in-order (menor valor na subárvore direita) para a raiz atual
-            raiz->direita = excluir(raiz->direita, temp->dado);   // Remove o nó com o valor copiado da subárvore direita
+            add(&((*arvore)->dir), valor); // Se o valor a ser inserido for maior que o atual, é inserido à direita
         }
     }
+}
 
-    // Após a exclusão, chama a função de balanceamento para garantir que a árvore permaneça balanceada
-    return balanceamento(raiz, valor);
+struct typeno *find(struct typeno *arvore, int valor){ // Função para encontrar um nó com base em sua chave
+
+    if(arvore == NULL){
+        printf("Empty\n");
+        return NULL;
+    }
+
+    if(valor > arvore->chave){
+        return find(arvore->dir, valor);
+    }
+
+    else if(valor < arvore->chave){
+        return find(arvore->esq, valor);
+    }
+
+    else{
+        return arvore;
+    }
+
 }
 
 
-// Função para percorrer a árvore em ordem
-void percorrerEmOrdem(struct NoAVL *raiz)
-{
-    if (raiz != NULL) // Verifica se o nó atual não é nulo
-    {
-        percorrerEmOrdem(raiz->esquerda); // Percorre a subárvore esquerda
-        printf("%d ", raiz->dado);        // Imprime o valor do nó atual
-        percorrerEmOrdem(raiz->direita);  // Percorre a subárvore direita
+void remover(struct typeno **raiz, int chave) {// Função para remover um nó
+    struct typeno *no = find(*raiz, chave);
+    if (no == NULL) return;
+
+    if (no->esq == NULL && no->dir == NULL) { // Caso 1: Nó é uma folha (não tem filhos)
+        if (no->pai != NULL) {
+            if (no->pai->esq == no) {
+                no->pai->esq = NULL;
+            } else {
+                no->pai->dir = NULL;
+            }
+        } else {
+            *raiz = NULL; // Se for o único nó na árvore
+        }
+        free(no);
+    }
+   
+    else if (no->esq == NULL && no->dir != NULL) {  // Caso 2: Nó tem apenas um filho à direita
+        if (no->pai != NULL) {
+            if (no->pai->esq == no) {
+                no->pai->esq = no->dir;
+            } else {
+                no->pai->dir = no->dir;
+            }
+        } else {
+            *raiz = no->dir; // Se o nó for a raiz
+        }
+        no->dir->pai = no->pai;
+        free(no);
+    }
+    
+    else if (no->esq != NULL && no->dir == NULL) { // Caso 3: Nó tem apenas um filho à esquerda
+        if (no->pai != NULL) {
+            if (no->pai->esq == no) {
+                no->pai->esq = no->esq;
+            } else {
+                no->pai->dir = no->esq;
+            }
+        } else {
+            *raiz = no->esq; // Se o nó for a raiz
+        }
+        no->esq->pai = no->pai;
+        free(no);
+    }
+    
+    else { // Caso 4: Nó tem dois filhos
+        struct typeno *sucessor = no->dir; // Encontrar o sucessor (o menor nó na subárvore direita)
+        while (sucessor->esq != NULL) {
+            sucessor = sucessor->esq;
+        }
+        no->chave = sucessor->chave;
+        remover(&no->dir, sucessor->chave); // Remover o sucessor
     }
 }
 
-// Função para percorrer a árvore em pré-ordem
-void percorrerPreOrdem(struct NoAVL *raiz)
-{
-    if (raiz != NULL) // Verifica se o nó atual não é nulo
-    {
-        printf("%d ", raiz->dado);        // Imprime o valor do nó atual
-        percorrerEmOrdem(raiz->esquerda); // Percorre a subárvore esquerda
-        percorrerEmOrdem(raiz->direita);  // Percorre a subárvore direita
-    }
-}
 
-// Função para percorrer a árvore em pós-ordem
-void percorrerPosOrdem(struct NoAVL *raiz)
-{
-    if (raiz != NULL) // Verifica se o nó atual não é nulo
-    {
-        percorrerEmOrdem(raiz->esquerda); // Percorre a subárvore esquerda
-        percorrerEmOrdem(raiz->direita);  // Percorre a subárvore direita
-        printf("%d ", raiz->dado);        // Imprime o valor do nó atual
-    }
-}
 
-// Função auxiliar para imprimir um caractere precedido por uma quantidade específica de espaços
-void imprimeNo(int c, int b)
-{
-    int i;
-    for (i = 0; i < b; i++) // Loop para imprimir espaços proporcionais à profundidade
+void imprimeNo(int a, int b){ // (REFERÊNCIA DA WEB) Função para imprimir um nó precedido por espaços vazios
+
+    for (int i = 0; i < b; i++)
         printf("   ");
-    printf("%i\n", c); // Imprime o valor do nó com a devida indentação
+    printf("%i\n", a);
 }
 
-// Função para exibir a árvore no formato esquerda-raiz-direita segundo Sedgewick
-void mostraArvore(struct NoAVL *a, int b)
-{
-    if (a != NULL) // Verifica se o nó atual não é nulo
-    {
-        // Chama a função recursivamente para percorrer a subárvore direita
-        mostraArvore(a->direita, b + 1);
-        // Imprime o nó atual com um espaçamento proporcional à sua profundidade
-        imprimeNo(a->dado, b);
-        // Chama a função recursivamente para percorrer a subárvore esquerda
-        mostraArvore(a->esquerda, b + 1);
+
+void imprimeArvore(struct typeno *arvore, int b){ // (REFERÊNCIA DA WEB) Função para exibir a árvore no formato esquerda-raiz-direita segundo Sedgewick 
+    if (arvore == NULL){
+        return;
     }
+    imprimeArvore(arvore->dir, b + 1);
+    imprimeNo(arvore->chave, b); 
+    imprimeArvore(arvore->esq, b + 1);
 }
-/*
-3 - Escreva uma função para calcular a altura de uma árvore AVL.
-Peça ao usuário para inserir elementos em uma árvore AVL e, em seguida,
-exiba a altura da árvore resultante.*/
-// Função para calcular a altura de uma árvore AVL
-int alturaTree(struct NoAVL *no)
-{
-    if (no == NULL)
-    { // Se o nó for nulo, a altura é -1
+
+
+typedef struct typenoAVL{
+
+    int info;
+    int altura; // altura da subárvore
+    struct typeno *esq;
+    struct typeno *dir;
+
+}typenoAVL;
+
+//---------- FUNÇÕES AUXILIARES ----------
+
+int altura(typenoAVL* no){ 
+
+    if(no == NULL){ // se o nó não existir, a altura da árvore é -1
         return -1;
     }
-
-    // Calcula a altura da subárvore esquerda e direita
-    int altura_esquerda = alturaTree(no->esquerda) + 1;
-    int altura_direita = alturaTree(no->direita) + 1;
-
-    // Retorna a maior altura entre a subárvore esquerda e direita, somada à altura do nó atual
-    if (1 + ((altura_esquerda > altura_direita)))
-    {
-        return altura_esquerda;
-    }
-    else
-    {
-        return altura_direita;
+    else{
+        return no->altura;
     }
 }
 
-// Buscar elemento na árvore
-struct NoAVL *buscarNo(struct NoAVL *raiz, int valor)
-{
-    if (raiz == NULL || raiz->dado == valor)
-        return raiz;
+int fatorBalanceamento(typenoAVL* no){
 
-    if (valor < raiz->dado)
-        return buscarNo(raiz->esquerda, valor);
-    else
-        return buscarNo(raiz->direita, valor);
+    return abs(altura(no->esq) - altura(no->dir)); 
+    /* o sinal do FB determinará apenas qual rotação será aplicada.
+    Neste caso, precisaremos apenas do módulo.  */
 }
 
-/* // Teste de altura
-struct NoAVL *raiz = NULL;
-raiz = inserir(raiz, 30);
-raiz = inserir(raiz, 31);
-printf("%d",altura(buscarNo(raiz,NULL))); // ÁRVORE VAZIA = -1
-printf("%d",altura(buscarNo(raiz,31))); // FOLHA = 0;
-mostraArvore(raiz,3);
-*/
+//---------- ROTAÇÕES ----------
 
-/*4 - Escreva uma função para verificar se uma árvore é uma árvore AVL válida,
-ou seja, se ela satisfaz todas as propriedades de uma árvore AVL.
- Teste sua função em diferentes árvores AVL, incluindo árvores corretas
- e incorretas, e verifique se a função retorna os resultados esperados.
-*/
-int main()
-{
+void rotSimDir(ArvAVL *raiz){ // ponteiro de ponteiro para referenciar a raíz
 
-    struct NoAVL *raiz = NULL;
-    //Inserindo elementos na árvore AVL
-    raiz = inserir(raiz, 30);
-    raiz = inserir(raiz, 24);
-    raiz = inserir(raiz, 20);
-    raiz = inserir(raiz, 35);
-    raiz = inserir(raiz, 27);
-    raiz = inserir(raiz, 33);
-    raiz = inserir(raiz, 38);
-    raiz = inserir(raiz, 25);
-    raiz = inserir(raiz, 22);
-    raiz = inserir(raiz, 34);
-    raiz = inserir(raiz, 40);
-    raiz = inserir(raiz, 29);
-    mostraArvore(raiz, 3);
-   
-    printf("\nLetra A - Insere 31 ---------------------------\n");
-    raiz = inserir(raiz, 31);
-    mostraArvore(raiz, 3);
-   
-    printf("\nLetra B - Insere 15 ---------------------------\n");
-    raiz = inserir(raiz, 15);
-    mostraArvore(raiz, 3);
-   
-    printf("\nLetra C - Insere 23 ----------------------------\n");
-    raiz = inserir(raiz, 23);
-    mostraArvore(raiz, 3);
-   
-    printf("\nLetra D - Exclui 24 ---------------------------\n");
-    raiz = excluir(raiz, 24);
-    mostraArvore(raiz, 3);
-   
-    printf("\nLetra E - Exclui 35 ---------------------------\n");
-    raiz = excluir(raiz, 35);
-    mostraArvore(raiz, 3);
+    struct typenoAVL *no;
 
-     printf("\nLetra F - Inserir 24 ---------------------------\n");
-    raiz = inserir(raiz, 24);
-    mostraArvore(raiz, 3);
+    no = (*raiz)->esq; // auxiliar para o lado esquerdo da raíz
+    (*raiz)->esq = no->dir;
+    no->dir = *raiz;
 
-     printf("\nLetra G - Exclui 27 ---------------------------\n");
-    raiz = excluir(raiz, 27);
-    mostraArvore(raiz, 3);
+    (*raiz)->altura = fmax(altura((*raiz)->esq), altura((*raiz)->dir)) +1;
 
-     printf("\nLetra H - Inserir 32 ---------------------------\n");
-    raiz = inserir(raiz, 32);
-    mostraArvore(raiz, 3);
+    no->altura = fmax(altura(no->esq), (*raiz)->altura) + 1;
 
-     printf("\nLetra I - Exclui 30 ---------------------------\n");
-    raiz = excluir(raiz, 30);
-    mostraArvore(raiz, 3);
-    
-    printf("\nLetra J - Inserir 21 ---------------------------\n");
-    raiz = inserir(raiz, 21);
-    mostraArvore(raiz, 3);
-
-    return 0;
+    *raiz = no;
 }
+
+void rotSimEsq(ArvAVL *raiz){
+
+    struct typenoAVL *no;
+
+    no = (*raiz)->dir; //auxiliar para o lado direito da raíz 
+    (*raiz)->dir = no->esq;
+    no->esq = (*raiz);
+
+    (*raiz)-> altura = fmax(altura((*raiz)->esq), altura((*raiz)->dir) + 1);
+
+    no->altura = fmax(altura(no->dir), ((*raiz)->altura) + 1);
+
+    (*raiz) = no;
+
+}
+
+int insere_ArvAVL(ArvAVL *raiz, int valor){
+    int res;
+    if(*raiz == NULL){//árvore vazia ou nó folha
+        struct typenoAVL *novo;
+        novo = (struct typenoAVL*)malloc(sizeof(struct typenoAVL));
+        if(novo == NULL)
+            return 0;
+
+        novo->info = valor;
+        novo->altura = 0;
+        novo->esq = NULL;
+        novo->dir = NULL;
+        *raiz = novo;
+        return 1;
+    }
+
+    struct typenoAVL *atual = *raiz;
+    if(valor < atual->info){
+        if((res = insere_ArvAVL(&(atual->esq), valor)) == 1){
+            if(fatorBalanceamento_NO(atual) >= 2){
+                if(valor < (*raiz)->esq->chave ){
+                    RotacaoLL(raiz);
+                }else{
+                    RotacaoLR(raiz);
+                }
+            }
+        }
+    }else{
+        if(valor > atual->info){
+            if((res = insere_ArvAVL(&(atual->dir), valor)) == 1){
+                if(fatorBalanceamento_NO(atual) >= 2){
+                    if((*raiz)->dir->info < valor){
+                        RotacaoRR(raiz);
+                    }else{
+                        RotacaoRL(raiz);
+                    }
+                }
+            }
+        }else{
+            printf("Valor duplicado!!\n");
+            return 0;
+        }
+    }
+
+    atual->altura = maior(altura_NO(atual->esq),altura_NO(atual->dir)) + 1;
+
+    return res;
+}
+
+int remove_ArvAVL(ArvAVL *raiz, int valor){
+	if(*raiz == NULL){// valor não existe
+	    printf("valor não existe!!\n");
+	    return 0;
+	}
+
+    int res;
+	if(valor < (*raiz)->info){
+	    if((res = remove_ArvAVL(&(*raiz)->esq,valor)) == 1){
+            if(fatorBalanceamento_NO(*raiz) >= 2){
+                if(altura_NO((*raiz)->dir->esq) <= altura_NO((*raiz)->dir->dir))
+                    RotacaoRR(raiz);
+                else
+                    RotacaoRL(raiz);
+            }
+	    }
+	}
+
+	if((*raiz)->info < valor){
+	    if((res = remove_ArvAVL(&(*raiz)->dir, valor)) == 1){
+            if(fatorBalanceamento_NO(*raiz) >= 2){
+                if(altura_NO((*raiz)->esq->dir) <= altura_NO((*raiz)->esq->esq) )
+                    RotacaoLL(raiz);
+                else
+                    RotacaoLR(raiz);
+            }
+	    }
+	}
+
+	if((*raiz)->info == valor){
+	    if(((*raiz)->esq == NULL || (*raiz)->dir == NULL)){// nó tem 1 filho ou nenhum
+			struct typenoAVL *oldNode = (*raiz);
+			if((*raiz)->esq != NULL)
+                *raiz = (*raiz)->esq;
+            else
+                *raiz = (*raiz)->dir;
+			free(oldNode);
+		}else { // nó tem 2 filhos
+			struct typenoAVL* temp = procuraMenor((*raiz)->dir);
+			(*raiz)->info = temp->info;
+			remove_ArvAVL(&(*raiz)->dir, (*raiz)->info);
+            if(fatorBalanceamento_NO(*raiz) >= 2){
+				if(altura_NO((*raiz)->esq->dir) <= altura_NO((*raiz)->esq->esq))
+					RotacaoLL(raiz);
+				else
+					RotacaoLR(raiz);
+			}
+		}
+		if (*raiz != NULL)
+            (*raiz)->altura = maior(altura_NO((*raiz)->esq),altura_NO((*raiz)->dir)) + 1;
+		return 1;
+	}
+
+	(*raiz)->altura = maior(altura_NO((*raiz)->esq),altura_NO((*raiz)->dir)) + 1;
+
+	return res;
+}
+
