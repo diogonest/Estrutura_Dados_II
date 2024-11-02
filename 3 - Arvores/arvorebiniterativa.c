@@ -1,229 +1,180 @@
-#include <stdio.h>   // Inclui a biblioteca padrão de entrada e saída
-#include <stdlib.h>  // Inclui a biblioteca padrão de alocação de memória
+#include <stdio.h>   // Biblioteca padrão para entrada e saída
+#include <stdlib.h>  // Biblioteca padrão para alocação de memória
 
 // Estrutura de um nó da árvore binária
 typedef struct NoArvore {
-    int dado;            // Valor armazenado no nó
-    struct NoArvore* esquerda;  // Ponteiro para o filho à esquerda
-    struct NoArvore* direita;   // Ponteiro para o filho à direita
+    int dado;                  // Valor armazenado no nó
+    struct NoArvore* esquerda; // Ponteiro para o filho à esquerda
+    struct NoArvore* direita;  // Ponteiro para o filho à direita
 } NoArvore;
 
-// Estrutura para a pilha usada nas travessias iterativas
+// Estrutura para um nó da pilha
 typedef struct Pilha {
-    NoArvore* no;       // Ponteiro para um nó da árvore
-    struct Pilha* topo;   // Ponteiro para o próximo elemento da pilha
+    NoArvore* no;              // Ponteiro para um nó da árvore
+    struct Pilha* prox;        // Ponteiro para o próximo elemento na pilha
 } Pilha;
 
-// Função para criar um novo nó
+// Função para criar um novo nó da árvore
 NoArvore* criarNo(int dado) {
-    NoArvore* novoNo = (NoArvore*)malloc(sizeof(NoArvore));  // Aloca memória para um novo nó
-    if (novoNo == NULL) {  // Verifica se a alocação foi bem-sucedida
-        printf("Erro: Falha na alocação de memória.\n");
-        return NULL;  // Retorna NULL em caso de falha
+    NoArvore* novoNo = (NoArvore*)malloc(sizeof(NoArvore));  // Aloca memória para o novo nó
+    if (!novoNo) {  // Verifica se a alocação foi bem-sucedida
+        fprintf(stderr, "Erro: Falha na alocação de memória.\n");
+        return NULL;
     }
-    novoNo->dado = dado;        // Atribui o valor ao novo nó
-    novoNo->esquerda = NULL;    // Inicializa o ponteiro esquerdo como NULL
-    novoNo->direita = NULL;     // Inicializa o ponteiro direito como NULL
-    return novoNo;  // Retorna o ponteiro para o novo nó
+    novoNo->dado = dado;       // Define o valor do nó
+    novoNo->esquerda = NULL;   // Inicializa o ponteiro esquerdo como NULL
+    novoNo->direita = NULL;    // Inicializa o ponteiro direito como NULL
+    return novoNo;
 }
 
-// Função para inserir elementos na árvore balanceada a partir de um vetor ordenado
+// Função para inserir elementos de um vetor ordenado em uma árvore balanceada
 NoArvore* inserirElementos(int vetor[], int inicio, int fim) {
-    if (inicio > fim)  // Caso base: se a sublista é inválida, retorna NULL
+    if (inicio > fim)  // Condição de parada: sublista inválida
         return NULL;
 
-    int meio = (inicio + fim) / 2;           // Calcula o índice do meio do vetor
-    NoArvore* novoNo = criarNo(vetor[meio]); // Cria um nó com o valor do meio
+    int meio = (inicio + fim) / 2; // Índice do meio do vetor
+    NoArvore* novoNo = criarNo(vetor[meio]); // Cria o nó com o valor do meio
 
-    // Insere recursivamente os elementos na subárvore esquerda
+    // Inserção recursiva dos elementos nas subárvores esquerda e direita
     novoNo->esquerda = inserirElementos(vetor, inicio, meio - 1);
-    
-    // Insere recursivamente os elementos na subárvore direita
     novoNo->direita = inserirElementos(vetor, meio + 1, fim);
     
-    return novoNo;  // Retorna o ponteiro para o nó criado
+    return novoNo;
 }
 
-// Função para buscar um elemento na árvore
+// Função para buscar um elemento na árvore binária
 NoArvore* buscarElemento(NoArvore* raiz, int dado) {
-    if (raiz == NULL || raiz->dado == dado) {
-        // Retorna a raiz se a árvore estiver vazia ou se encontrar o valor
+    if (!raiz || raiz->dado == dado)  // Se a árvore estiver vazia ou o valor for encontrado
         return raiz;
-    }
 
-    if (dado < raiz->dado) {  // Se o valor buscado for menor, busca na subárvore esquerda
-        return buscarElemento(raiz->esquerda, dado);
-    } else {  // Caso contrário, busca na subárvore direita
-        return buscarElemento(raiz->direita, dado);
-    }
+    // Busca recursiva: esquerda se o valor é menor, direita caso contrário
+    return (dado < raiz->dado) ? buscarElemento(raiz->esquerda, dado) : buscarElemento(raiz->direita, dado);
 }
 
-// Função para encontrar o menor valor em uma subárvore
-struct NoArvore *encontrarMinimo(struct NoArvore *raiz)
-{
-    struct NoArvore *atual = raiz;
-    // Itera até encontrar o nó mais à esquerda (menor valor)
-    while (atual->esquerda != NULL)
-    {
+// Função para encontrar o nó com o menor valor em uma subárvore
+NoArvore* encontrarMinimo(NoArvore* raiz) {
+    NoArvore* atual = raiz;
+    while (atual && atual->esquerda) {  // Vai até o nó mais à esquerda
         atual = atual->esquerda;
     }
-    return atual;  // Retorna o nó com o menor valor
+    return atual;
 }
 
 // Função para excluir um nó da árvore
-struct NoArvore *excluir(struct NoArvore *raiz, int dado)
-{
-    if (raiz == NULL)  // Se a árvore estiver vazia, retorna NULL
-    {
-        return raiz;
-    }
-
-    if (dado < raiz->dado)  // Se o valor for menor, exclui na subárvore esquerda
-    {
-        raiz->esquerda = excluir(raiz->esquerda, dado);
-    }
-    else if (dado > raiz->dado)  // Se o valor for maior, exclui na subárvore direita
-    {
-        raiz->direita = excluir(raiz->direita, dado);
-    }
-    else  // Se o nó a ser excluído for encontrado
-    {
-        // Caso 1: Nó folha ou nó com apenas um filho
-        if (raiz->esquerda == NULL)
-        {
-            struct NoArvore *temp = raiz->direita;  // Armazena o filho direito
-            free(raiz);  // Libera a memória do nó atual
-            return temp;  // Retorna o filho direito
-        }
-        else if (raiz->direita == NULL)
-        {
-            struct NoArvore *temp = raiz->esquerda;  // Armazena o filho esquerdo
-            free(raiz);  // Libera a memória do nó atual
-            return temp;  // Retorna o filho esquerdo
-        }
-
-        // Caso 2: Nó com dois filhos, encontra o sucessor in-order (menor valor na subárvore direita)
-        struct NoArvore *temp = encontrarMinimo(raiz->direita);  // Encontra o menor valor na subárvore direita
-        raiz->dado = temp->dado;  // Substitui o valor do nó a ser excluído pelo sucessor
-        raiz->direita = excluir(raiz->direita, temp->dado);  // Exclui o sucessor in-order
-    }
-    return raiz;  // Retorna a nova raiz da subárvore
-}
-
-// Função para push um nó
-void push(Pilha** topo, NoArvore* no) {
-    Pilha* novaPilha = (Pilha*)malloc(sizeof(Pilha));  // Aloca memória para um novo elemento da pilha
-    novaPilha->no = no;  // Atribui o nó ao elemento da pilha
-    novaPilha->topo = *topo;  // Ajusta o ponteiro próximo para o antigo topo
-    *topo = novaPilha;  // Atualiza o topo da pilha
-}
-
-// Função para pop um nó
-NoArvore* pop(Pilha** topo) {
-    if (*topo == NULL) {  // Verifica se a pilha está vazia
+NoArvore* excluir(NoArvore* raiz, int dado) {
+    if (!raiz)  // Se a árvore estiver vazia, retorna NULL
         return NULL;
+
+    if (dado < raiz->dado) {
+        raiz->esquerda = excluir(raiz->esquerda, dado);
+    } else if (dado > raiz->dado) {
+        raiz->direita = excluir(raiz->direita, dado);
+    } else {
+        // Caso 1 e 2: Nó folha ou com apenas um filho
+        if (!raiz->esquerda || !raiz->direita) {
+            NoArvore* temp = raiz->esquerda ? raiz->esquerda : raiz->direita;
+            free(raiz);  // Libera o nó
+            return temp;
+        }
+
+        // Caso 3: Nó com dois filhos
+        NoArvore* temp = encontrarMinimo(raiz->direita); // Sucessor in-order
+        raiz->dado = temp->dado;
+        raiz->direita = excluir(raiz->direita, temp->dado);
     }
-    Pilha* temp = *topo;        // Armazena o topo atual temporariamente
-    *topo = (*topo)->topo;       // Atualiza o topo para o próximo elemento
-    NoArvore* desempilhado = temp->no;  // Armazena o nó do elemento desempilhado
-    free(temp);  // Libera a memória do elemento desempilhado
-    return desempilhado;  // Retorna o nó desempilhado
+    return raiz;
 }
 
-// Travessia Pré-Ordem Recursiva
+// Funções auxiliares para operações de pilha
+void push(Pilha** topo, NoArvore* no) {
+    Pilha* novaPilha = (Pilha*)malloc(sizeof(Pilha));
+    novaPilha->no = no;
+    novaPilha->prox = *topo;
+    *topo = novaPilha;
+}
+
+NoArvore* pop(Pilha** topo) {
+    if (!*topo) return NULL;
+    Pilha* temp = *topo;
+    NoArvore* desempilhado = temp->no;
+    *topo = temp->prox;
+    free(temp);
+    return desempilhado;
+}
+
+// Funções de travessia da árvore (Recursivas e Iterativas)
 void preOrdemRec(NoArvore* raiz) {
-    if (raiz != NULL) {  // Se o nó não é nulo
-        printf("%d ", raiz->dado);  // Imprime o valor do nó
-        preOrdemRec(raiz->esquerda);  // Visita recursivamente a subárvore esquerda
-        preOrdemRec(raiz->direita);   // Visita recursivamente a subárvore direita
+    if (raiz) {
+        printf("%d ", raiz->dado);
+        preOrdemRec(raiz->esquerda);
+        preOrdemRec(raiz->direita);
     }
 }
 
-// Travessia Em Ordem Recursiva
 void emOrdemRec(NoArvore* raiz) {
-    if (raiz != NULL) {  // Se o nó não é nulo
-        emOrdemRec(raiz->esquerda);  // Visita recursivamente a subárvore esquerda
-        printf("%d ", raiz->dado);  // Imprime o valor do nó
-        emOrdemRec(raiz->direita);   // Visita recursivamente a subárvore direita
+    if (raiz) {
+        emOrdemRec(raiz->esquerda);
+        printf("%d ", raiz->dado);
+        emOrdemRec(raiz->direita);
     }
 }
 
-// Travessia Pós-Ordem Recursiva
 void posOrdemRec(NoArvore* raiz) {
-    if (raiz != NULL) {  // Se o nó não é nulo
-        posOrdemRec(raiz->esquerda);  // Visita recursivamente a subárvore esquerda
-        posOrdemRec(raiz->direita);   // Visita recursivamente a subárvore direita
-        printf("%d ", raiz->dado);   // Imprime o valor do nó
+    if (raiz) {
+        posOrdemRec(raiz->esquerda);
+        posOrdemRec(raiz->direita);
+        printf("%d ", raiz->dado);
     }
 }
 
-// Travessia Pré-Ordem Iterativa
 void preOrdemIt(NoArvore* raiz) {
-    if (raiz == NULL) return;  // Se a árvore estiver vazia, retorna
+    if (!raiz) return;
     
-    Pilha* pilha = NULL;  // Inicializa uma pilha vazia
-    push(&pilha, raiz);  // Empilha o nó raiz
+    Pilha* pilha = NULL;
+    push(&pilha, raiz);
     
-    while (pilha != NULL) {  // Enquanto a pilha não estiver vazia
-        NoArvore* atual = pop(&pilha);  // Desempilha o nó do topo
-        printf("%d ", atual->dado);      // Imprime o valor do nó
+    while (pilha) {
+        NoArvore* atual = pop(&pilha);
+        printf("%d ", atual->dado);
         
-        // Empilha o nó direito se ele existir
-        if (atual->direita != NULL) {
-            push(&pilha, atual->direita);
-        }
-        // Empilha o nó esquerdo se ele existir
-        if (atual->esquerda != NULL) {
-            push(&pilha, atual->esquerda);
-        }
+        if (atual->direita) push(&pilha, atual->direita);
+        if (atual->esquerda) push(&pilha, atual->esquerda);
     }
 }
 
-// Travessia Em Ordem Iterativa
 void emOrdemIt(NoArvore* raiz) {
-    Pilha* pilha = NULL;  // Inicializa uma pilha vazia
-    NoArvore* atual = raiz;  // Começa pelo nó raiz
+    Pilha* pilha = NULL;
+    NoArvore* atual = raiz;
     
-    while (atual != NULL || pilha != NULL) {  // Enquanto houver nós a processar
-        // Vai até o nó mais à esquerda da subárvore
-        while (atual != NULL) {
+    while (atual || pilha) {
+        while (atual) {
             push(&pilha, atual);
             atual = atual->esquerda;
         }
         
-        // Processa o nó no topo da pilha
         atual = pop(&pilha);
         printf("%d ", atual->dado);
         
-        // Move-se para a subárvore direita
         atual = atual->direita;
     }
 }
 
-// Travessia Pós-Ordem Iterativa
 void posOrdemIt(NoArvore* raiz) {
-    if (raiz == NULL) return;  // Se a árvore estiver vazia, retorna
+    if (!raiz) return;
     
-    Pilha* pilha1 = NULL;  // Inicializa a primeira pilha
-    Pilha* pilha2 = NULL;  // Inicializa a segunda pilha
-    push(&pilha1, raiz);  // Empilha a raiz na primeira pilha
+    Pilha* pilha1 = NULL;
+    Pilha* pilha2 = NULL;
+    push(&pilha1, raiz);
     
-    // Processa todos os nós
-    while (pilha1 != NULL) {
-        NoArvore* atual = pop(&pilha1);  // Desempilha o nó do topo da primeira pilha
-        push(&pilha2, atual);  // Empilha o nó na segunda pilha
+    while (pilha1) {
+        NoArvore* atual = pop(&pilha1);
+        push(&pilha2, atual);
         
-        // Empilha os filhos esquerdo e direito na primeira pilha
-        if (atual->esquerda != NULL) {
-            push(&pilha1, atual->esquerda);
-        }
-        if (atual->direita != NULL) {
-            push(&pilha1, atual->direita);
-        }
+        if (atual->esquerda) push(&pilha1, atual->esquerda);
+        if (atual->direita) push(&pilha1, atual->direita);
     }
     
-    // Imprime os nós na ordem da segunda pilha
-    while (pilha2 != NULL) {
+    while (pilha2) {
         NoArvore* atual = pop(&pilha2);
         printf("%d ", atual->dado);
     }
@@ -231,13 +182,12 @@ void posOrdemIt(NoArvore* raiz) {
 
 // Função principal para testar o código
 int main() {
-    int vetor[] = {1, 2, 3, 4, 5, 6, 7};  // Vetor ordenado de entrada
-    int n = sizeof(vetor) / sizeof(vetor[0]);  // Calcula o tamanho do vetor
+    int vetor[] = {1, 2, 3, 4, 5, 6, 7};
+    int n = sizeof(vetor) / sizeof(vetor[0]);
     
-    // Cria uma árvore balanceada a partir do vetor ordenado
+    // Cria árvore balanceada a partir do vetor ordenado
     NoArvore* raiz = inserirElementos(vetor, 0, n - 1);
     
-    // Testa as funções de travessia recursiva
     printf("Travessia Pré-Ordem Recursiva: ");
     preOrdemRec(raiz);
     printf("\n");
@@ -250,7 +200,6 @@ int main() {
     posOrdemRec(raiz);
     printf("\n");
     
-    // Testa as funções de travessia iterativa
     printf("Travessia Pré-Ordem Iterativa: ");
     preOrdemIt(raiz);
     printf("\n");
@@ -262,6 +211,6 @@ int main() {
     printf("Travessia Pós-Ordem Iterativa: ");
     posOrdemIt(raiz);
     printf("\n");
-
-    return 0;  // Finaliza o programa
+    
+    return 0;
 }
