@@ -1,1 +1,47 @@
-Algoritmo de Ordenação Externa em CEste projeto implementa um algoritmo de ordenação externa, ideal para arquivos grandes que não cabem na memória RAM. O código lê um arquivo binário de entrada com números inteiros, divide-o em blocos, ordena cada bloco separadamente e, por fim, realiza o merge desses blocos para gerar um arquivo ordenado.Estrutura do Projetomain.c: Implementação principal do algoritmo de ordenação externa.gen_input.c: Gera o arquivo de entrada input.dat com números aleatórios para teste.check_output.c: Lê o arquivo de saída output.dat e exibe os números ordenados no terminal.input.dat: Arquivo binário gerado com números inteiros aleatórios.output.dat: Arquivo resultante após a ordenação. Passo a Passo para Executar1. Preparar o AmbienteCertifique-se de ter o GCC instalado.Utilize o VSCode ou qualquer outro editor de código.2. Gerar o Arquivo de Entrada:No terminal do VSCode, para criar um arquivo input.dat com números aleatórios, compile e execute o gerador de entrada:gcc gen_input.c -o gen_input./gen_input3. Compilar o Código Principal:Para criar arquivos temporários (temp0.dat, temp1.dat, etc.) e o arquivo final output.dat, compile o algoritmo de ordenação externa:gcc main.c -o ordenacao_externa./ordenacao_externa4. Verificar o Resultado:Para ver os números ordenados exibidos no terminal, compile e execute o verificador:gcc check_output.c -o check_output./check_outputExplicação do AlgoritmoDivisão em Runs: O arquivo de entrada é lido em blocos pequenos (conforme a capacidade da memória) e cada bloco é ordenado individualmente usando qsort().Merge dos Runs Ordenados: Os arquivos temporários (runs) são combinados em um único arquivo ordenado (output.dat) usando a técnica de merge.
+Algoritmo de Ordena√ß√£o Externa em C
+Este projeto implementa um algoritmo de ordena√ß√£o externa, ideal para arquivos grandes que n√£o cabem na mem√≥ria RAM. O c√≥digo l√™ um arquivo bin√°rio de entrada com n√∫meros inteiros, divide-o em blocos, ordena cada bloco separadamente e, por fim, realiza o merge desses blocos para gerar um arquivo ordenado.
+
+Estrutura do Projeto
+* main.c: Implementa√ß√£o principal do algoritmo de ordena√ß√£o externa.
+* gen_input.c: Gera o arquivo de entrada input.dat com n√∫meros aleat√≥rios para teste.
+* check_output.c: L√™ o arquivo de sa√≠da output.dat e exibe os n√∫meros ordenados no terminal.
+* input.dat: Arquivo bin√°rio gerado com n√∫meros inteiros aleat√≥rios.
+* output.dat: Arquivo resultante ap√≥s a ordena√ß√£o.
+
+ Passo a Passo para Executar
+
+1. Preparar o Ambiente
+* Certifique-se de ter o GCC instalado.
+* Utilize o VSCode ou qualquer outro editor de c√≥digo.
+
+2. Gerar o Arquivo de Entrada:
+No terminal do VSCode, para criar um arquivo input.dat com n√∫meros aleat√≥rios, compile e execute o gerador de entrada:
+
+gcc gen_input.c -o gen_input
+
+./gen_input
+
+
+3. Compilar o C√≥digo Principal:
+Para criar arquivos tempor√°rios (temp0.dat, temp1.dat, etc.) e o arquivo final output.dat, compile o algoritmo de ordena√ß√£o externa:
+
+gcc main.c -o ordenacao_externa
+
+./ordenacao_externa
+
+
+4. Verificar o Resultado:
+Para ver os n√∫meros ordenados exibidos no terminal, compile e execute o verificador:
+
+gcc check_output.c -o check_output
+
+./check_output
+
+
+Explica√ß√£o do Algoritmo
+1. Divis√£o em Runs: O arquivo de entrada √© lido em blocos pequenos (conforme a capacidade da mem√≥ria) e cada bloco √© ordenado individualmente usando qsort().
+2. Merge dos Runs Ordenados: Os arquivos tempor√°rios (runs) s√£o combinados em um √∫nico arquivo ordenado (output.dat) usando a t√©cnica de merge.
+
+
+
+
